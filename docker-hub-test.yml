@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  backend:
+    image: nadineelsayed/proshop-backend:latest
+    ports:
+      - "5000:5000"
+    env_file: .env
+    restart: always
+  frontend:
+    image: nadineelsayed/proshop-frontend:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: always
