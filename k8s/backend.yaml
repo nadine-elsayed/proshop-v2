@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proshop-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proshop-backend
+  template:
+    metadata:
+      labels:
+        app: proshop-backend
+    spec:
+      containers:
+      - name: proshop-backend
+        image: nadineelsayed/proshop-backend:latest
+        command: ["npm", "start"]
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: proshop-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: proshop-backend
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000

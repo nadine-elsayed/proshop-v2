@@ -29,3 +29,9 @@ uploads/*jpg
 
 # API tests
 http
+
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
