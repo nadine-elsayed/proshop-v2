@@ -1,0 +1,12 @@
+backend:
+  repository: "" 
+  tag: "latest"
+  containerPort: 5000
+
+frontend:
+  repository: "" 
+  tag: "latest"
+  containerPort: 3000
+
+service:
+  type: LoadBalancer

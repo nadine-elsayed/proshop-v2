@@ -1,0 +1,41 @@
+# Backend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proshop-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proshop-backend
+  template:
+    metadata:
+      labels:
+        app: proshop-backend
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.backend.repository }}
+          ports:
+            - containerPort: {{ .Values.backend.containerPort }}
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proshop-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proshop-frontend
+  template:
+    metadata:
+      labels:
+        app: proshop-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.frontend.repository }}
+          ports:
+            - containerPort: {{ .Values.frontend.containerPort }}
