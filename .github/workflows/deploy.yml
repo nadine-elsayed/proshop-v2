@@ -33,9 +33,10 @@ jobs:
         with:
           context: .
           file: ./backend/Dockerfile
-          push: false # Don't push yet!
+          push: false
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
-          load: true # Load into local docker for scanning
+          load: true
+          no-cache: true 
 
       - name: Trivy Scan Backend
         uses: aquasecurity/trivy-action@master
