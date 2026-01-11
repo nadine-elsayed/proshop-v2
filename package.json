@@ -11,33 +11,26 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "data:import": "node backend/seeder",
     "data:destroy": "node backend/seeder -d",
-    "build": "npm install && npm install --prefix frontend && npm run build --prefix frontend",
-    "generate-toc": "markdown-toc -i readme.md"
+    "build": "npm install && npm install --prefix frontend && npm run build --prefix frontend"
   },
   "author": "Brad Traversy",
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "braces": "^3.0.3",
     "colors": "^1.4.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.8.4",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "qs": "^6.11.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "body-parser": "^1.20.3",
-    "braces": "^3.0.3",
     "concurrently": "^8.2.2",
-    "markdown-toc": "^1.2.0",
     "nodemon": "^3.1.9"
-  },
-  "overrides": {
-    "body-parser": "1.20.3",
-    "braces": "3.0.3",
-    "qs": "6.11.1",
-    "path-to-regexp": "0.1.12"
   }
 }
