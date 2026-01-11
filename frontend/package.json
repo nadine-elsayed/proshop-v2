@@ -22,6 +22,10 @@
     "react-toastify": "^9.1.1",
     "web-vitals": "^2.1.4"
   },
+  "overrides": {
+    "qs": "^6.11.1",
+    "braces": "^3.0.3"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
