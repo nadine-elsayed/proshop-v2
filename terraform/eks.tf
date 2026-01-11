@@ -7,9 +7,14 @@ module "eks" {
 
   cluster_endpoint_public_access = true
 
+  # Networking
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
+
+  # IRSA (IAM Roles for Service Accounts) 
+  # This is the "correct" way to handle ALB controller permissions
+  enable_irsa = true 
 
   # EKS Managed Node Group(s)
   eks_managed_node_group_defaults = {
@@ -23,6 +28,15 @@ module "eks" {
       desired_size = 2
 
       capacity_type = "SPOT"
+
+      # FIX: Attaching AdministratorAccess to the Nodes
+      # This bypasses the "DescribeLoadBalancers" AccessDenied error
+      iam_role_additional_policies = {
+        AmazonEKSWorkerNodePolicy          = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+        AmazonEKS_CNI_Policy               = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+        AmazonEC2ContainerRegistryReadOnly = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+        LBControllerPolicy                 = "arn:aws:iam::aws:policy/AdministratorAccess"
+      }
     }
   }
 

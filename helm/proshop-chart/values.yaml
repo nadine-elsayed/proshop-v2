@@ -1,12 +1,13 @@
 backend:
-  repository: "" 
+  repository: "nadineelsayed/proshop-backend"
   tag: "latest"
   containerPort: 5000
 
 frontend:
-  repository: "" 
+  repository: "nadineelsayed/proshop-frontend"
   tag: "latest"
   containerPort: 3000
 
+# We use NodePort here because the ALB Ingress will talk to these services
 service:
-  type: LoadBalancer
+  type: NodePort

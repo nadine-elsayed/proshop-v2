@@ -15,9 +15,14 @@ spec:
     spec:
       containers:
         - name: backend
-          image: {{ .Values.backend.repository }}
+          image: "{{ .Values.backend.repository }}:{{ .Values.backend.tag }}"
           ports:
             - containerPort: {{ .Values.backend.containerPort }}
+          imagePullPolicy: Always
+          # This pulls MONGO_URI, JWT_SECRET, and NODE_ENV from your ConfigMap
+          envFrom:
+            - configMapRef:
+                name: proshop-config
 ---
 # Frontend Deployment
 apiVersion: apps/v1
@@ -36,6 +41,10 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: {{ .Values.frontend.repository }}
+          image: "{{ .Values.frontend.repository }}:{{ .Values.frontend.tag }}"
           ports:
             - containerPort: {{ .Values.frontend.containerPort }}
+          imagePullPolicy: Always
+          env:
+            - name: NODE_ENV
+              value: "production"
