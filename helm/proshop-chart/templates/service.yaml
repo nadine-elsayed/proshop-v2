@@ -1,12 +1,27 @@
+# Frontend Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: proshop-service
+  name: proshop-frontend-service
 spec:
-  type: {{ .Values.service.type }}
+  type: NodePort
   selector:
     app: proshop-frontend
   ports:
     - protocol: TCP
       port: 80
       targetPort: 3000
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: proshop-backend-service
+spec:
+  type: NodePort
+  selector:
+    app: proshop-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000

@@ -10,9 +10,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required for Gitleaks to scan history
+          fetch-depth: 0
 
-      # STEP 1: Scan for Secrets
+      # STEP 1: GITLEAKS (Secret Scanning)
       - name: Gitleaks Scan
         uses: gitleaks/gitleaks-action@v2
         env:
@@ -27,32 +27,34 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # STEP 2: Build & Scan Backend
-      - name: Build Backend
+      # STEP 2: BUILD & TRIVY SCAN (Backend)
+      - name: Build & Scan Backend
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./backend/Dockerfile
-          push: false
+          push: true  # Combined build and push for speed
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
-          load: true
-          no-cache: true 
+          load: false 
 
       - name: Trivy Scan Backend
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest'
           severity: 'CRITICAL,HIGH'
-          exit-code: '0' # Changed to 0 so the build doesn't fail on moderate flags
+          exit-code: '1' # Fails build if high vulnerabilities found
           ignore-unfixed: true
-          vuln-type: 'library'
 
-      # STEP 3: Push if Scan Passes
-      - name: Push Images
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
+      # STEP 3: BUILD & SCAN (Frontend)
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./frontend/Dockerfile # Ensure this path is correct
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-frontend:latest
 
-      # STEP 4: Deploy using Helm
+      # STEP 4: CONFIGURE AWS & DEPLOY
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -62,12 +64,13 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          # 1. Update the cluster name here to your actual EKS name!
-          aws eks update-kubeconfig --region us-east-1 --name your-cluster-name
+          # Use your official cluster name from Terraform
+          aws eks update-kubeconfig --region us-east-1 --name proshop-eks
           
-          # 2. Match the --set flags to our Helm values.yaml structure
+          # Deploy using Helm with corrected variable names
           helm upgrade --install proshop ./helm/proshop-chart \
             --set backend.repository=${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend \
             --set backend.tag=latest \
             --set frontend.repository=${{ secrets.DOCKERHUB_USERNAME }}/proshop-frontend \
-            --set frontend.tag=latest
+            --set frontend.tag=latest \
+            --set ingress.enabled=true

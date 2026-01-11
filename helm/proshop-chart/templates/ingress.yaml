@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: proshop-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    # REPLACE WITH YOUR ACTUAL ACM ARN
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:123456789012:certificate/your-uuid
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    # Important: Health check path for the backend
+    alb.ingress.kubernetes.io/healthcheck-path: /api/config/paypal 
+spec:
+  ingressClassName: alb
+  rules:
+    - host: yourdomain.com  # REPLACE WITH YOUR DOMAIN
+      http:
+        paths:
+          # 1. Route API requests to the Backend
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: proshop-backend-service
+                port:
+                  number: 80
+          # 2. Route everything else to the Frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proshop-frontend-service
+                port:
+                  number: 80
