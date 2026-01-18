@@ -18,7 +18,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: detect --verbose --redact --fail
+          # This forces it to scan the current directory and fail on any findings
+          args: detect --source . --verbose --redact --fail
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
