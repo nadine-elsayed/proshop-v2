@@ -27,6 +27,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # NEW: Download the beautiful HTML template so Trivy can find it
+      - name: Download Trivy HTML template
+        run: wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+
       # STEP 2: BUILD & SCAN (Backend)
       - name: Build Backend
         uses: docker/build-push-action@v5
@@ -42,8 +46,9 @@ jobs:
         with:
           image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest'
           format: 'template'
-          template: '@/contrib/html.tpl'
+          template: '@html.tpl'
           output: 'trivy-backend-report.html'
+          severity: 'CRITICAL,HIGH'
 
       # STEP 3: BUILD & SCAN (Frontend)
       - name: Build Frontend
@@ -55,13 +60,14 @@ jobs:
           load: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-frontend:latest
 
-      - name: Trivy Scan Backend (HTML)
+      - name: Trivy Scan Frontend (HTML)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest'
+          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/proshop-frontend:latest'
           format: 'template'
-          template: "@$(find / -name html.tpl 2>/dev/null | head -n 1)" # Auto-find the template
-          output: 'trivy-backend-report.html'
+          template: '@html.tpl'
+          output: 'trivy-frontend-report.html'
+          severity: 'CRITICAL,HIGH'
 
       # STEP 4: UPLOAD REPORTS
       - name: Upload Scan Reports
@@ -70,7 +76,7 @@ jobs:
           name: security-reports
           path: trivy-*.html
 
-      # STEP 5: DEPLOY (Will be Green because Terraform is running)
+      # STEP 5: DEPLOY
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
