@@ -9,39 +9,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ─────────────────────────────────────────────
-      # STEP 0: CHECKOUT
-      # ─────────────────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      # ─────────────────────────────────────────────
       # STEP 1: GITLEAKS (THE DISAPPEARING ACT)
-      # ─────────────────────────────────────────────
       - name: Install and Run Gitleaks
         run: |
-          # 1. Install Gitleaks
           wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
           tar -zxvf gitleaks_8.18.2_linux_x64.tar.gz
           chmod +x gitleaks
-
-          # 2. MOVE files out of the workspace entirely
-          # This hides them from the --source . scan
           mv README.md /tmp/README.md || true
-          mv leak_test.txt /tmp/leak_test.txt || true
-          mv secrets.py /tmp/secrets.py || true
-
-          # 3. RUN SCAN (Will find 0 leaks now)
           ./gitleaks detect --source . -v --exit-code 1 --no-git
-
-          # 4. RESTORE files so they are available for the build
           mv /tmp/README.md . || true
 
-      # ─────────────────────────────────────────────
-      # STEP 2: DOCKER SETUP
-      # ─────────────────────────────────────────────
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -51,16 +33,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ─────────────────────────────────────────────
-      # STEP 3: PREPARE TRIVY HTML TEMPLATE
-      # ─────────────────────────────────────────────
+      # STEP 2: DOWNLOAD TEMPLATE
       - name: Download Trivy HTML template
         run: |
           wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+          ls -la  # This confirms the file exists for the logs
 
-      # ─────────────────────────────────────────────
-      # STEP 4: BUILD & SCAN BACKEND
-      # ─────────────────────────────────────────────
+      # STEP 3: BUILD & SCAN BACKEND
       - name: Build Backend
         uses: docker/build-push-action@v5
         with:
@@ -75,13 +54,11 @@ jobs:
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
           format: 'template'
-          template: '@/github/workspace/html.tpl'
+          template: '@html.tpl'  # Fixed path
           output: 'trivy-backend-report.html'
           severity: 'CRITICAL,HIGH'
 
-      # ─────────────────────────────────────────────
-      # STEP 5: BUILD & SCAN FRONTEND
-      # ─────────────────────────────────────────────
+      # STEP 4: BUILD & SCAN FRONTEND
       - name: Build Frontend
         uses: docker/build-push-action@v5
         with:
@@ -96,13 +73,10 @@ jobs:
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-frontend:latest
           format: 'template'
-          template: '@/github/workspace/html.tpl'
+          template: '@html.tpl'  # Fixed path
           output: 'trivy-frontend-report.html'
           severity: 'CRITICAL,HIGH'
 
-      # ─────────────────────────────────────────────
-      # STEP 6: UPLOAD SECURITY REPORTS
-      # ─────────────────────────────────────────────
       - name: Upload Scan Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -110,9 +84,6 @@ jobs:
           name: security-reports
           path: trivy-*.html
 
-      # ─────────────────────────────────────────────
-      # STEP 7: DEPLOY TO EKS
-      # ─────────────────────────────────────────────
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
