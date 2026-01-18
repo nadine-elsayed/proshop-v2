@@ -60,7 +60,7 @@ jobs:
         with:
           image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest'
           format: 'template'
-          template: '@/contrib/html.tpl' 
+          template: "@$(find / -name html.tpl 2>/dev/null | head -n 1)" # Auto-find the template
           output: 'trivy-backend-report.html'
 
       # STEP 4: UPLOAD REPORTS
