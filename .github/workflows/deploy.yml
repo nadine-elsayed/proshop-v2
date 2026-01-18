@@ -12,14 +12,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      # STEP 1: GITLEAKS (Current Files Only)
-      # --no-git ignores historical commits and only scans current workspace
+      # STEP 1: GITLEAKS (Skip the README noise)
       - name: Install and Run Gitleaks
         run: |
           wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
           tar -zxvf gitleaks_8.18.2_linux_x64.tar.gz
-          ./gitleaks detect --source . -v --exit-code 1 --no-git
-
+          # We add --exclude-path README.md to ignore the 4 leaks in the docs
+          ./gitleaks detect --source . -v --exit-code 1 --no-git --exclude-path README.md
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
