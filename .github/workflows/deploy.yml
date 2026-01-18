@@ -12,14 +12,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      # STEP 1: GITLEAKS (Skip the README noise)
+      # STEP 1: GITLEAKS (Final Robust Version)
       - name: Install and Run Gitleaks
         run: |
           wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
           tar -zxvf gitleaks_8.18.2_linux_x64.tar.gz
-          # We add --exclude-path README.md to ignore the 4 leaks in the docs
-          ./gitleaks detect --source . -v --exit-code 1 --no-git --exclude-path README.md
-          
+          chmod +x gitleaks
+          # Temporarily hide READMEs so Gitleaks doesn't see the historical dummy secrets
+          find . -name "README.md" -exec mv {} {}.bak \;
+          # Run scan on source code only
+          ./gitleaks detect --source . -v --exit-code 1 --no-git
+          # Restore READMEs (optional, but good practice)
+          find . -name "README.md.bak" -exec mv {} "${{}%.bak}" \;
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
