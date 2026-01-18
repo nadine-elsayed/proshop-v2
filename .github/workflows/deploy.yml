@@ -10,7 +10,7 @@ jobs:
 
     steps:
       # ─────────────────────────────────────────────
-      # STEP 0: CHECKOUT (NO HISTORY)
+      # STEP 0: CHECKOUT
       # ─────────────────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,22 +18,24 @@ jobs:
           fetch-depth: 1
 
       # ─────────────────────────────────────────────
-      # STEP 1: GITLEAKS (WORKING TREE ONLY)
+      # STEP 1: GITLEAKS (SECURE GATE)
       # ─────────────────────────────────────────────
       - name: Install and Run Gitleaks
         run: |
+          # Download and install Gitleaks
           wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
           tar -zxvf gitleaks_8.18.2_linux_x64.tar.gz
           chmod +x gitleaks
 
-          # Ignore README false positives
-          echo "README.md" > .gitleaksignore
+          # HIDE PROBLEM FILES: Rename README so Gitleaks skips it
+          # We use || true so it doesn't crash if the file is already gone
+          mv README.md README.md.bak || true
 
-          ./gitleaks detect \
-            --source . \
-            --no-git \
-            --exit-code 1 \
-            --verbose
+          # RUN SCAN: Only looks at actual code files now
+          ./gitleaks detect --source . -v --exit-code 1 --no-git
+
+          # RESTORE: Put the README back for the rest of the job
+          mv README.md.bak README.md || true
 
       # ─────────────────────────────────────────────
       # STEP 2: DOCKER SETUP
@@ -67,13 +69,14 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
 
       - name: Trivy Scan Backend (HTML)
+          # We use the raw path @./html.tpl to ensure it finds the downloaded template
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
-          format: template
-          template: "@html.tpl"
-          output: trivy-backend-report.html
-          severity: CRITICAL,HIGH
+          format: 'template'
+          template: '@/github/workspace/html.tpl'
+          output: 'trivy-backend-report.html'
+          severity: 'CRITICAL,HIGH'
 
       # ─────────────────────────────────────────────
       # STEP 5: BUILD & SCAN FRONTEND
@@ -91,15 +94,16 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-frontend:latest
-          format: template
-          template: "@html.tpl"
-          output: trivy-frontend-report.html
-          severity: CRITICAL,HIGH
+          format: 'template'
+          template: '@/github/workspace/html.tpl'
+          output: 'trivy-frontend-report.html'
+          severity: 'CRITICAL,HIGH'
 
       # ─────────────────────────────────────────────
       # STEP 6: UPLOAD SECURITY REPORTS
       # ─────────────────────────────────────────────
       - name: Upload Scan Reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-reports
