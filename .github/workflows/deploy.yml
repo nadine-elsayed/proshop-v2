@@ -17,6 +17,8 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: detect --verbose --redact --fail
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
