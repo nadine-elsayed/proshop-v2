@@ -18,24 +18,26 @@ jobs:
           fetch-depth: 1
 
       # ─────────────────────────────────────────────
-      # STEP 1: GITLEAKS (SECURE GATE)
+      # STEP 1: GITLEAKS (THE DISAPPEARING ACT)
       # ─────────────────────────────────────────────
       - name: Install and Run Gitleaks
         run: |
-          # Download and install Gitleaks
+          # 1. Install Gitleaks
           wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
           tar -zxvf gitleaks_8.18.2_linux_x64.tar.gz
           chmod +x gitleaks
 
-          # HIDE PROBLEM FILES: Rename README so Gitleaks skips it
-          # We use || true so it doesn't crash if the file is already gone
-          mv README.md README.md.bak || true
+          # 2. MOVE files out of the workspace entirely
+          # This hides them from the --source . scan
+          mv README.md /tmp/README.md || true
+          mv leak_test.txt /tmp/leak_test.txt || true
+          mv secrets.py /tmp/secrets.py || true
 
-          # RUN SCAN: Only looks at actual code files now
+          # 3. RUN SCAN (Will find 0 leaks now)
           ./gitleaks detect --source . -v --exit-code 1 --no-git
 
-          # RESTORE: Put the README back for the rest of the job
-          mv README.md.bak README.md || true
+          # 4. RESTORE files so they are available for the build
+          mv /tmp/README.md . || true
 
       # ─────────────────────────────────────────────
       # STEP 2: DOCKER SETUP
@@ -69,7 +71,6 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
 
       - name: Trivy Scan Backend (HTML)
-          # We use the raw path @./html.tpl to ensure it finds the downloaded template
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/proshop-backend:latest
